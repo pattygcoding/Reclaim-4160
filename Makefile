@@ -4,19 +4,20 @@
 CC = g++
 
 # set the compiler flags
-CFLAGS = `sdl2-config --libs --cflags` -ggdb3 -O0 -Wall -lSDL2_image -lm 
+CFLAGS = `sdl2-config --libs --cflags` -std=c++14 -ggdb3 -O0 -Wall -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm
+
 
 # add header files here
-HDRS = GameEngine.hpp GameObject.hpp
+HDRS = $(wildcard *.h) #GameObject.h Sprite.h GameEngine.h Player.h PushableObj.h Particle.h ParticleEmitter.h
 
 # add source files here
-SRCS = main.cpp GameEngine.cpp GameObject.cpp
+SRCS = $(wildcard *.cpp)
 
 # generate names of object files
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(SRCS:.cpp=.o) #$(SRCS:.cpp=.o)
 
 # name of executable
-EXEC = my_game
+EXEC = astrorun
 
 # default recipe
 all: $(EXEC)
@@ -40,3 +41,5 @@ clean:
 	rm -f $(EXEC) 
 	rm -f $(OBJS)
 
+run:
+	./$(EXEC)
