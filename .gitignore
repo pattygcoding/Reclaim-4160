@@ -1,0 +1,27 @@
+# Build output
+build/
+build-*/
+out/
+*.o
+*.obj
+*.exe
+*.html.wasm
+*.wasm
+*.js.mem
+*.data
+
+# Local-only dependencies / scratch (not part of the repo)
+.deps/
+.nose/
+.emsdk/
+node_modules/
+
+# Tooling scratch
+.playwright-mcp/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

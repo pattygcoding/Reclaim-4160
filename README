@@ -1,8 +1,0 @@
-To compile: type "make"
-
-To run: type "./my_game"
-
-To clean: type "make clean"
-
-This program generates a picture of pi, along with an animating rectangle that covers
-a small section of the screen.

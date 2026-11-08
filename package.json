@@ -1,0 +1,13 @@
+{
+  "name": "reclaim-4160-assets",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Asset pipeline for Reclaim-4160 (SVG -> PNG rasterizer).",
+  "scripts": {
+    "assets": "node tools/gen-assets.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  }
+}

@@ -1,177 +1,192 @@
-# Reclaim-4160
+<p align="center">
+  <img src="docs/title.png" alt="Reclaim-4160 title screen" width="620">
+</p>
 
-A 2D side-scrolling game about a pandemic-era grocery run: grab the last pack of
-toilet paper and make it to the checkout before the store (and your health) runs out.
+<h1 align="center">Reclaim&nbsp;4160</h1>
 
-Built in **C++ with SDL2** as a class project for **CPSC 4160 – 2D Game Engine
-Construction**. It is a prototype built on a hand-rolled game engine (no external
-engine like Unity/Godot) — everything from the game loop to collision and animation
-lives in this repository.
-
-> **Status: work-in-progress prototype.** The gameplay described below reflects the
-> current build. Some systems are complete, some are stubbed. See
-> [What it's supposed to be](#what-its-supposed-to-be) for the honest state of things.
+<p align="center">
+  A polished 2D side-scrolling "grocery run" written from scratch in modern C++ —<br>
+  it builds to a <b>native desktop binary</b> and, from the same source, to <b>WebAssembly</b> for the browser.
+</p>
 
 ---
 
-## The idea
+## What it is
 
-You play a shopper in a store aisle during a supply shortage. Your goal is to
-**collect the pack of toilet paper** and **reach the checkout counter** without being
-worn down by the "yellow" enemies roaming the aisle. Hand sanitizer pickups along the
-way heal you, and shipping boxes / shopping carts can be climbed or pushed to get
-around.
+**Reclaim-4160** is a small action-platformer about surviving a pandemic-era supply
+shortage. You play a masked shopper who must sweep a supermarket aisle, grab every last
+roll of **toilet paper**, and reach the **checkout** before the roaming **germs** drain
+your health.
 
-The repository is named **Reclaim-4160** — "reclaim" as in reclaiming the toilet paper.
-The legacy window title still reads *"Astrorun"* from an earlier iteration.
+It started life as a CPSC 4160 (*2D Game Engine Construction*) class project. This is a
+ground-up rewrite: a clean, modern **C++20** engine with no game-engine dependency
+(SDL2 only), organized into modules, with a generated **SVG art pipeline** and a fully
+**procedural audio** system. The same single codebase compiles to a native executable and
+to WebAssembly.
 
----
+<p align="center">
+  <img src="docs/gameplay.png" alt="Reclaim-4160 gameplay" width="620">
+</p>
 
-## How to play
+## Features
 
-Reach the pack of toilet paper (TP), then touch the **checkout counter** while holding
-it to **win**. If your **health hits 0** you get a **Game Over** screen.
+- **Modern C++20 engine written from scratch** — game loop, scene manager, delta-timed
+  update, AABB physics/collision, sprite rendering, cached text, particles, and screen shake.
+- **Runs native and on the web** — one CMake project targets SDL2 on desktop and the
+  Emscripten SDL2 ports (`SDL2`, `SDL2_image`, `SDL2_ttf`, `SDL2_mixer`) for the browser.
+- **Best-practice C++** — RAII wrappers for every SDL handle, `std::unique_ptr` ownership,
+  no raw owning pointers, `enum class`, `const`-correct APIs, namespaces, and **no global
+  singletons** (a single `Game` object owns all services and hands them out explicitly).
+- **Game feel** — coyote time + jump buffering, variable jump height, squash-and-stretch,
+  invulnerability frames with knockback, particle bursts, and camera shake.
+- **Two levels** with escalating difficulty, scored progression, and a best-score tracker.
+- **Enemies** (patrollers and chasers) with a finite-state AI; stomp them from above for points.
+- **Pickups** — toilet paper (objective) and hand sanitizer (heals you).
+- **Pushable shopping carts**, jumpable crates, and a parallax store backdrop.
+- **Full UI flow** — title, how-to-play, in-game HUD, pause, game over, and win screens.
+- **Fully generated assets** — all art is authored as SVG and rasterized to PNG; all music
+  and sound effects are synthesized to WAV by a Python script. No third-party assets.
 
-### Controls
+## Controls
 
-| Action | Key |
+| Action | Keys |
 | --- | --- |
-| Move left / right | `A` / `D` |
-| Jump | `Space` |
-| Drop down (fall off a ledge you're standing on) | `S` |
-| Pause / back out of a screen | `Esc` |
-| Navigate menus | `W` / `S` |
-| Confirm menu option | `Space` |
+| Move left / right | `A` / `D` (or `←` / `→`) |
+| Jump | `Space` / `W` / `↑` — hold for a higher jump |
+| Stomp an enemy | Jump and land on it from above |
+| Pause | `Esc` |
+| Navigate menus | `W` / `S` (or `↑` / `↓`) |
+| Confirm menu option | `Space` / `Enter` |
 
-### Game screens
-
-- **Title screen** – *Start*, *How to Play*, *Quit*
-- **How to Play** – on-screen instructions page
-- **In-game HUD** – live health label + value (rendered with SDL2_ttf)
-- **Pause menu** – *Unpause*, *Return to Home*
-- **Game Over** – *Try Again*, *Return to Home*
-- **You Win** – *Play Again*, *Return to Home*
-
----
-
-## Features (current build)
-
-- **Game loop** – fixed ~60 FPS loop with FPS limiting and an optional terminal FPS counter.
-- **Scrolling camera** – the store background is 2000 px wide; the camera follows the
-  player across a 680×480 window.
-- **Animated player** – sprite-sheet animation driven by a state machine
-  (`IDLE`, `MOVE_LEFT`, `MOVE_RIGHT`, `JUMP`, `FALL`), plus a separate "damaged" sprite
-  shown briefly when hit.
-- **Enemy AI (finite state machine)** – enemies idle, aggro when the player is in view,
-  and chase left/right, dealing damage on contact.
-- **Pickups** – collectible toilet paper and hand-sanitizer health items
-  (+health on pickup, with a particle sparkle FX and a pickup sound).
-- **Physics / platforms** – gravity, jumping, standing on top of objects, and drop-through.
-- **Pushable objects** – shopping carts that respond to being pushed.
-- **UI & menus** – title, pause, game-over, and win screens built from TTF text and a
-  selection-cursor sprite.
-- **Audio** – separate music tracks for menu / gameplay / game over / victory, and SFX.
-
----
-
-## What it's supposed to be
-
-For now this is a **compact, self-contained demonstration of a 2D game engine** written
-from scratch, wrapped in a small "survive the aisle and get the toilet paper" game. It
-shows off the core pieces you'd expect from a course-built engine: an object hierarchy
-(`GameObject` → `Player`, `Enemy`, `PushableObj`, `HealthObj`, `ToiletPaper`, …),
-sprite animation, box collisions, camera/background scrolling, particle effects, text
-rendering, and state-driven menus.
-
-It is **not** a finished, packaged game yet. Notably:
-
-- **Art, audio, and font assets are not included in the repository** — only source code
-  and a leftover `pi.bmp` are committed. The game will not run until the asset folders
-  listed in [Required assets](#required-assets) are provided.
-- Balance, level content, and enemy behavior are prototype-level and may change.
-- `GameEngine.hpp` / `GameObject.hpp` are leftovers from an earlier assignment and are
-  not part of the active build (the active headers are `GameEngine.h` / `GameObject.h`).
-
----
-
-## Requirements
-
-- A C++ compiler (`g++`) with **C++14** support
-- [SDL2](https://www.libsdl.org/) development libraries:
-  - `SDL2`
-  - `SDL2_image` (PNG loading)
-  - `SDL2_ttf` (TrueType fonts)
-  - `SDL2_mixer` (music / SFX)
-
-The provided `Makefile` uses `sdl2-config`. It is written for **macOS / Linux**.
-On Windows, build from **MSYS2/MinGW** (or WSL) with the SDL2 packages installed.
-
----
-
-## Build & run
-
-Using the included Makefile:
-
-```sh
-# compile
-make clean && make
-
-# run the game
-make run          # or ./astrorun
-```
-
-The build produces the executable **`astrorun`**.
-
----
-
-## Required assets
-
-The code loads assets at runtime from `img/`, `sounds/`, and `fonts/` folders that are
-**not committed**. To run the game, add files with these names:
-
-**`img/`**
-`background.png`, `player.png`, `player_damaged.png`, `enemy.png`,
-`shoppingcart.png`, `boxes.png`, `box.png`, `checkout.png`, `tp.png`,
-`sanitizer.png`, `healthsparkle.png`, `selector.png`, `title.png`, `paused.png`,
-`gameover.png`, `youwin.png`, `instructions.png`
-
-**`sounds/`**
-`Toilet_Paper_Waltz_Final.wav`, `TPP_3rd_Draft_Final.wav`, `Game_Over.wav`,
-`Victory.wav`, `Health_Get.wav`
-
-**`fonts/`**
-`arial.ttf`
+**Objective:** collect every roll of toilet paper in the aisle, then walk into the glowing
+checkout to clear the level. Sanitizer restores health; germs cost it.
 
 ---
 
 ## Project layout
 
 ```
-main.cpp            Entry point + game loop (FPS limiter)
-GameEngine.*        Singleton engine: window, renderer, events, update, render,
-                    camera, collisions, menus, music, win/game-over logic
-GameObject.*        Base object: sprite, box collider, movement, render, collisions
-Player.*            Player state machine, jumping/gravity, health, damaged sprite
-Enemy.*             Enemy FSM (idle / move / aggro) and contact damage
-PushableObj.*       Shopping carts that can be pushed
-HealthObj.*         Sanitizer pickups (+health) with particle FX + SFX
-ToiletPaper.*       The objective item (collect -> win condition)
-Particle / ParticleEmitter.*   Particle sparkle effects
-Sprite.*            Texture loading, source/screen rects, animation frames
-Text.*              SDL2_ttf text rendering
-MenuOptions.*       Menu option list + selection cursor
-Background.*        Scrolling background / camera math
-Makefile            Build rules for the SDL2 project (output: astrorun)
+.
+├── CMakeLists.txt          Build for native + Emscripten (one project, two targets)
+├── include/reclaim/        Public headers, one folder per module
+│   ├── core/               Game, Renderer, Input, Assets, Audio, Font, Math, RAII handles
+│   ├── gfx/                Sprite, ParticleSystem
+│   ├── ui/                 TextRenderer, Menu, Hud
+│   ├── world/              Entity, Player, Enemy, Pickup, Pushable, Checkout, Level
+│   └── scenes/             Scene base + Title / Instructions / Play / Win / GameOver
+├── src/                    Implementations (mirrors include/)
+├── assets/
+│   ├── images/             Generated PNG sprites (from SVG)
+│   ├── fonts/              Display font (SIL OFL) + license
+│   └── sounds/             Generated WAV sound effects + looping music
+├── tools/
+│   ├── gen-assets.mjs      SVG -> PNG rasterizer (@resvg/resvg-js)
+│   └── gen-sounds.py       Procedural audio generator (Python stdlib)
+├── web/shell.html          Emscripten HTML shell
+├── scripts/                build-native / build-web helpers (.ps1 and .sh)
+└── docs/                   Screenshots used by this README
 ```
 
----
+## Prerequisites
+
+- **CMake 3.20+** and a **C++20** compiler (GCC, Clang, or MSVC)
+- **SDL2**, **SDL2_image**, **SDL2_ttf**, **SDL2_mixer** development libraries
+- *(optional)* **Node 18+** to regenerate art, **Python 3** to regenerate audio
+- *(optional)* the **Emscripten SDK** only for the WebAssembly build
+
+## Build & run (native desktop)
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/reclaim            # Windows: build\reclaim.exe
+```
+
+Or use a helper script:
+
+```bash
+./scripts/build-native.sh      # macOS / Linux
+```
+```powershell
+.\scripts\build-native.ps1      # Windows
+```
+
+The `assets/` folder is copied next to the executable automatically, so the relative
+`assets/...` paths the game uses resolve with no extra setup.
+
+## Build & run (WebAssembly)
+
+Install and activate the Emscripten SDK once:
+
+```bash
+git clone https://github.com/emscripten-core/emsdk
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh        # Windows: .\emsdk_env.ps1
+```
+
+Then build the web target (the CMake project detects Emscripten and switches on the
+`-sUSE_SDL=2` ports automatically):
+
+```bash
+./scripts/build-web.sh          # macOS / Linux
+```
+```powershell
+.\scripts\build-web.ps1          # Windows
+```
+
+This produces:
+
+```
+build-web/reclaim.html   (uses web/shell.html)
+build-web/reclaim.js
+build-web/reclaim.wasm
+build-web/reclaim.data   (the preloaded assets/ folder)
+```
+
+Browsers won't load WASM from `file://`, so serve the folder over HTTP:
+
+```bash
+cd build-web
+python -m http.server 8000
+# open http://localhost:8000/reclaim.html
+```
+
+Click the canvas to give it keyboard focus, then play.
+
+## Regenerating assets
+
+All art and audio are generated from source in `tools/` (both are optional — the output is
+already committed under `assets/`):
+
+```bash
+npm install                 # installs @resvg/resvg-js
+npm run assets              # SVG definitions -> assets/images/*.png
+python tools/gen-sounds.py  # synth SFX + music -> assets/sounds/*.wav
+```
+
+## Architecture notes
+
+- **`Game`** owns the window, renderer, asset manager, audio, text renderer, and the active
+  `Scene`. Scenes request transitions through `Game::requestScene`. There are **no globals**
+  and **no singletons** — everything is passed explicitly.
+- **Entities** never touch `Game`. `PlayScene` exposes a tiny interface (input, solid rects,
+  player position, particles, audio), so gameplay code stays decoupled and testable.
+- **`Renderer`** applies a single camera offset to every draw call, so world-space and
+  screen-space (HUD) rendering share one API; rounded rects and circles are built from
+  primitives to avoid an `SDL2_gfx` dependency.
+- **`AssetManager`** lazily loads and caches textures/fonts/sounds/music, handing out stable
+  `const Texture*` / `Font*` handles. Paths go through `paths::` so the same relative
+  `assets/...` lookup works natively and inside Emscripten's virtual filesystem.
 
 ## Credits
 
-Originally built for **CPSC 4160 – 2D Game Engine Construction**.
+- **Original CPSC 4160 project** — team: Nikita Tran, Cameron Larson, Jason Lyle,
+  Quinn Hubbarth; engine/gameplay by Patrick Goodwin (Dr. Victor Zordan's section).
+- **This rewrite** — modern C++20 engine, modular architecture, SVG art pipeline,
+  and procedural audio.
+- **Font** — "Press Start 2P" by CodeMan38, licensed under the SIL Open Font License
+  (see `assets/fonts/OFL.txt`).
 
-- **Team (CPSC 4160, Assignment 5):** Nikita Tran, Cameron Larson, Jason Lyle, Quinn Hubbarth
-- **Engine / gameplay code:** Patrick Goodwin (Dr. Victor Zordan's section)
-- **Art:** hand-drawn by Nikita Tran; hand-sanitizer sprite from
-  [clipartpng.com](https://clipartpng.com/?3267,green-hand-sanitizer-png-clipart)
-- **Music & SFX:** Cameron Larson
+
