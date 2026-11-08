@@ -39,7 +39,8 @@ to WebAssembly.
   singletons** (a single `Game` object owns all services and hands them out explicitly).
 - **Game feel** — coyote time + jump buffering, variable jump height, squash-and-stretch,
   invulnerability frames with knockback, particle bursts, and camera shake.
-- **Two levels** with escalating difficulty, scored progression, and a best-score tracker.
+- **Ten aisles** generated with escalating difficulty (longer layouts, more enemies and
+  pickups each aisle), plus scored progression and a best-score tracker.
 - **Enemies** (patrollers and chasers) with a finite-state AI; stomp them from above for points.
 - **Pickups** — toilet paper (objective) and hand sanitizer (heals you).
 - **Pushable shopping carts**, jumpable crates, and a parallax store backdrop.

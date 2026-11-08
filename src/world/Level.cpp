@@ -1,5 +1,8 @@
 #include "reclaim/world/Level.hpp"
 
+#include <algorithm>
+#include <vector>
+
 namespace reclaim {
 
 namespace {
@@ -8,107 +11,115 @@ constexpr float kFloorY  = 470.0f;
 constexpr float kEnemyY  = kFloorY - 46.0f;   // enemies are 46 tall
 constexpr float kPickupY = kFloorY - 84.0f;   // ground-level pickup
 constexpr float kCartY   = kFloorY - 56.0f;   // cart is 56 tall
+constexpr float kCrateW  = 110.0f;
 
-constexpr float kCrateW = 110.0f;
-// The player's jump clears ~164 px over a ~145 px horizontal window. Crates are
-// kept <=100 px tall and 110 px wide so every obstacle is reliably hoppable and
-// each level is always solvable.
-// Crate heights kept <=75 px so that even a quick tap-jump (~95 px) clears them.
-constexpr float kLow  = 65.0f;   // crate height (top = floor - height)
-constexpr float kMid  = 75.0f;
-constexpr float kHigh = 70.0f;
-constexpr float kVLow = 60.0f;
+constexpr int kLevelCount = 10;
 
-Rect crate(float x, float height) { return {x, kFloorY - height, kCrateW, height}; }
+struct Sky { Color top; Color bottom; };
+const Sky kSkies[] = {
+    {Color::rgb(132, 200, 248), Color::rgb(226, 244, 255)},
+    {Color::rgb(255, 196, 168), Color::rgb(255, 236, 214)},
+    {Color::rgb(176, 224, 196), Color::rgb(232, 248, 236)},
+    {Color::rgb(206, 196, 248), Color::rgb(238, 234, 255)},
+    {Color::rgb(255, 214, 150), Color::rgb(255, 240, 206)},
+};
+constexpr int kSkyCount = static_cast<int>(sizeof(kSkies) / sizeof(kSkies[0]));
 
-EnemySpawn patroller(Vec2 pos, float lo, float hi) { return {EnemyKind::Patroller, pos, lo, hi}; }
-EnemySpawn chaser(Vec2 pos, float lo, float hi) { return {EnemyKind::Chaser, pos, lo, hi}; }
+const char* const kNames[kLevelCount] = {
+    "Aisle 1 - Paper Run",
+    "Aisle 2 - Germ Gauntlet",
+    "Aisle 3 - Canned Chaos",
+    "Aisle 4 - Dairy Dash",
+    "Aisle 5 - Freezer Burn",
+    "Aisle 6 - Produce Panic",
+    "Aisle 7 - Checkout Crush",
+    "Aisle 8 - Restock Riot",
+    "Aisle 9 - Bulk Brawl",
+    "Aisle 10 - The Last Roll",
+};
 
-// A pickup resting just above a crate.
-Vec2 onCrate(float x, const Rect& c) { return {x, c.y - 40.0f}; }
+// Crate heights kept <=75 px so even a quick tap-jump (~95 px) clears them.
+constexpr float kCrateHeights[] = {65.0f, 75.0f, 60.0f, 70.0f};
+
+// Builds one solvable aisle. Difficulty ramps with the index: longer aisles,
+// more enemies, crates, pickups and carts.
+Level makeLevel(int i) {
+    Level lvl;
+    lvl.index = i + 1;
+    lvl.name = kNames[i];
+    lvl.worldWidth = 2400.0f + static_cast<float>(i) * 240.0f;
+    lvl.floorY = kFloorY;
+    lvl.timeLimit = -1.0f;  // no timer: keep every aisle winnable without rushing
+
+    const Sky& sky = kSkies[i % kSkyCount];
+    lvl.skyTop = sky.top;
+    lvl.skyBottom = sky.bottom;
+
+    lvl.playerStart = {90.0f, kFloorY - 70.0f};
+    lvl.checkoutPos = {lvl.worldWidth - 150.0f, kFloorY - 104.0f};
+
+    const int crateCount = 3 + i / 2;
+    const int tpGoal = std::min(3 + i / 2, 6);
+    lvl.tpGoal = tpGoal;
+
+    // Crates spread evenly across the middle of the aisle (all hoppable).
+    std::vector<Rect> crates;
+    crates.reserve(static_cast<std::size_t>(crateCount));
+    const float span = lvl.worldWidth - 1200.0f;
+    const float spacing = span / static_cast<float>(crateCount > 1 ? crateCount - 1 : 1);
+    for (int c = 0; c < crateCount; ++c) {
+        const float x = 620.0f + spacing * static_cast<float>(c);
+        const float h = kCrateHeights[(i + c) % 4];
+        crates.push_back({x, kFloorY - h, kCrateW, h});
+    }
+    lvl.crates = crates;
+
+    // Toilet paper: first on the ground by the start, the rest on crate tops.
+    lvl.tpSpawns.push_back({520.0f, kPickupY});
+    for (int t = 1; t < tpGoal; ++t) {
+        const Rect& c = crates[static_cast<std::size_t>((t - 1) % crateCount)];
+        lvl.tpSpawns.push_back({c.x + 25.0f, c.y - 40.0f});
+    }
+
+    const int gapCount = crateCount - 1;  // >= 2
+    const auto gapMid = [&](int k) {
+        const auto& a = crates[static_cast<std::size_t>(k)];
+        const auto& b = crates[static_cast<std::size_t>(k + 1)];
+        return (a.right() + b.left()) * 0.5f;
+    };
+
+    // Sanitizers in the gaps between crates.
+    const int sanCount = 1 + i / 3;
+    for (int s = 0; s < sanCount; ++s) {
+        lvl.sanitizerSpawns.push_back({gapMid(s % gapCount), kPickupY});
+    }
+
+    // Pushable carts in gaps (nudged so they don't sit on a pickup).
+    const int cartCount = 1 + i / 2;
+    for (int c = 0; c < cartCount; ++c) {
+        lvl.cartSpawns.push_back({gapMid((c + i) % gapCount) - 20.0f, kCartY});
+    }
+
+    // Enemies in gaps: alternate patrollers and chasers.
+    const int enemyCount = std::min(3 + i, 10);
+    for (int e = 0; e < enemyCount; ++e) {
+        const int k = e % gapCount;
+        const float lo = crates[static_cast<std::size_t>(k)].right() + 10.0f;
+        const float hi = crates[static_cast<std::size_t>(k + 1)].left() - 56.0f;
+        const EnemyKind kind = (e % 2 == 0) ? EnemyKind::Patroller : EnemyKind::Chaser;
+        const Vec2 pos{(lo + hi) * 0.5f, kEnemyY};
+        lvl.enemySpawns.push_back({kind, pos, lo, hi});
+    }
+
+    return lvl;
+}
 
 }  // namespace
 
 std::vector<Level> makeCampaign() {
     std::vector<Level> levels;
-
-    // ---------------- Level 1 : Paper Run ----------------
-    {
-        Level lvl;
-        lvl.name = "Aisle 1 - Paper Run";
-        lvl.index = 1;
-        lvl.worldWidth = 2600.0f;
-        lvl.floorY = kFloorY;
-        lvl.skyTop = Color::rgb(132, 200, 248);
-        lvl.skyBottom = Color::rgb(226, 244, 255);
-
-        const Rect c1 = crate(700.0f, kLow);
-        const Rect c2 = crate(980.0f, kMid);
-        const Rect c3 = crate(1500.0f, kLow);
-        const Rect c4 = crate(1900.0f, kHigh);
-        lvl.crates = {c1, c2, c3, c4};
-
-        lvl.tpSpawns = {
-            {520.0f, kPickupY},
-            onCrate(1010.0f, c2),
-            {2250.0f, kPickupY},
-        };
-        lvl.sanitizerSpawns = {onCrate(1930.0f, c4)};
-        lvl.cartSpawns = {{1250.0f, kCartY}};
-        lvl.enemySpawns = {
-            patroller({470.0f, kEnemyY}, 320.0f, 690.0f),
-            chaser({1300.0f, kEnemyY}, 1150.0f, 1480.0f),
-            patroller({2150.0f, kEnemyY}, 2080.0f, 2400.0f),
-        };
-        lvl.playerStart = {90.0f, kFloorY - 70.0f};
-        lvl.checkoutPos = {2450.0f, kFloorY - 104.0f};
-        lvl.tpGoal = 3;
-        lvl.timeLimit = -1.0f;
-        levels.push_back(std::move(lvl));
-    }
-
-    // ---------------- Level 2 : Germ Gauntlet ----------------
-    {
-        Level lvl;
-        lvl.name = "Aisle 2 - Germ Gauntlet";
-        lvl.index = 2;
-        lvl.worldWidth = 3300.0f;
-        lvl.floorY = kFloorY;
-        lvl.skyTop = Color::rgb(255, 196, 168);
-        lvl.skyBottom = Color::rgb(255, 236, 214);
-
-        const Rect a = crate(520.0f, kVLow);
-        const Rect b = crate(980.0f, kMid);
-        const Rect c = crate(1500.0f, kLow);
-        const Rect d = crate(1950.0f, kHigh);
-        const Rect e = crate(2500.0f, kVLow);
-        const Rect f = crate(2900.0f, kMid);
-        lvl.crates = {a, b, c, d, e, f};
-
-        lvl.tpSpawns = {
-            {430.0f, kPickupY},
-            onCrate(1010.0f, b),
-            onCrate(2000.0f, d),
-            onCrate(2930.0f, f),
-        };
-        lvl.sanitizerSpawns = {
-            {1250.0f, kPickupY},
-            onCrate(2530.0f, e),
-        };
-        lvl.cartSpawns = {{760.0f, kCartY}, {2250.0f, kCartY}};
-        lvl.enemySpawns = {
-            patroller({760.0f, kEnemyY}, 660.0f, 960.0f),
-            chaser({1300.0f, kEnemyY}, 1150.0f, 1480.0f),
-            patroller({2300.0f, kEnemyY}, 2150.0f, 2450.0f),
-            chaser({2750.0f, kEnemyY}, 2620.0f, 2880.0f),
-        };
-        lvl.playerStart = {70.0f, kFloorY - 70.0f};
-        lvl.checkoutPos = {3160.0f, kFloorY - 104.0f};
-        lvl.tpGoal = 4;
-        lvl.timeLimit = 120.0f;
-        levels.push_back(std::move(lvl));
-    }
-
+    levels.reserve(kLevelCount);
+    for (int i = 0; i < kLevelCount; ++i) levels.push_back(makeLevel(i));
     return levels;
 }
 
