@@ -16,8 +16,8 @@ constexpr float kMaxFall      = 1300.0f;
 constexpr float kMoveSpeed    = 300.0f;
 constexpr float kGroundAccel  = 2600.0f;
 constexpr float kAirAccel     = 1800.0f;
-constexpr float kJumpSpeed    = 760.0f;
-constexpr float kJumpCutAccel = 3200.0f;
+constexpr float kJumpSpeed    = 850.0f;  // ~164 px max jump height at kGravity
+constexpr float kJumpCutAccel = 1800.0f;  // softer: even a quick tap clears low crates
 constexpr float kCoyoteTime   = 0.10f;
 constexpr float kJumpBuffer   = 0.12f;
 constexpr float kInvulnTime   = 1.1f;
@@ -54,7 +54,6 @@ void Player::hurt(float amount, Vec2 source, PlayScene& scene) {
     squashX_ = 1.2f;
     squashY_ = 0.8f;
 
-    scene.shakeCamera(7.0f);
     scene.particles().impact(center(), Color::rgb(224, 78, 78), 14);
     scene.audio().playSound(scene.assets().sound("hit"));
 }
@@ -143,7 +142,9 @@ void Player::resolveCollisions(PlayScene& scene) {
         if (minX < minY) {
             if (overlapLeft < overlapRight) position.x = solid.left() - size.x;
             else position.x = solid.right();
-            velocity.x = 0.0f;
+            // Keep horizontal velocity on side hits (position is re-clamped each
+            // frame): this lets the player carry momentum up and over a crate
+            // they are pressed against, instead of sticking to its face.
         } else {
             if (overlapTop < overlapBottom) {
                 position.y = solid.top() - size.y;

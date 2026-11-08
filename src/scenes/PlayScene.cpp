@@ -246,7 +246,6 @@ void PlayScene::loseLevel() {
     phase_ = Phase::Losing;
     phaseTimer_ = 1.7f;
     game_.audio().playSound(game_.assets().sound("lose"));
-    shakeCamera(12.0f);
     if (player_) particles_.impact(player_->center(), Color::rgb(224, 78, 78), 26);
 }
 
